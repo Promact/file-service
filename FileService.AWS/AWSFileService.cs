@@ -12,12 +12,13 @@ namespace FileService.AWS
 {
     public class AWSFileService : IFileService
     {
-
         private readonly IAmazonS3 _s3Client;
+        private readonly TransferUtility _fileTransferUtility;
 
-        public AWSFileService(IAmazonS3 s3Client)
+        public AWSFileService(IAmazonS3 s3Client, TransferUtility fileTransferUtility)
         {
             _s3Client = s3Client ?? throw new ArgumentNullException(nameof(s3Client));
+            _fileTransferUtility = fileTransferUtility ?? throw new ArgumentNullException(nameof(fileTransferUtility));
         }
 
         public async Task UploadFileAsync(FileModelBase file)
@@ -25,15 +26,12 @@ namespace FileService.AWS
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
 
-
-
             if (!(file is S3FileModel s3File))
                 throw new ArgumentException("File model is not of type S3FileModel");
 
             try
             {
-                var fileTransferUtility = new TransferUtility(_s3Client);
-                await fileTransferUtility.UploadAsync(s3File.FilePath, s3File.BucketName, s3File.KeyName);
+                await _fileTransferUtility.UploadAsync(s3File.FilePath, s3File.BucketName, s3File.KeyName);
             }
             catch (AmazonS3Exception ex)
             {
@@ -48,7 +46,7 @@ namespace FileService.AWS
         /// <returns>True if the file exists in the bucket; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="file"/> is null.</exception>
         /// <exception cref="AmazonS3Exception">Thrown when an error occurs while communicating with Amazon S3.</exception>
-        public async Task<bool> DoesFileExistAsync(FileModelBase file)
+        public async Task<bool> CheckIfFileExistsAsync(FileModelBase file)
         {
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
@@ -58,7 +56,6 @@ namespace FileService.AWS
 
             try
             {
-
                 var request = new GetObjectMetadataRequest
                 {
                     BucketName = s3File.BucketName,
@@ -78,7 +75,7 @@ namespace FileService.AWS
             }
         }
 
-        public async Task<string> GetFileAsStringAsync(FileModelBase file)
+        public async Task<byte[]> GetFileAsBytesAsync(FileModelBase file)
         {
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
@@ -101,9 +98,7 @@ namespace FileService.AWS
 
                     byte[] bytes = memoryStream.ToArray();
 
-                    string fileContent = Encoding.UTF8.GetString(bytes);
-
-                    return fileContent;
+                    return bytes;
                 }
             }
             catch (AmazonS3Exception ex)
@@ -111,6 +106,7 @@ namespace FileService.AWS
                 throw;
             }
         }
+
         public async Task<string> GetSignedUrlAsync(FileModelBase file, TimeSpan expiration)
         {
             if (file == null)
@@ -120,9 +116,8 @@ namespace FileService.AWS
                 throw new ArgumentException("File model is not of type S3FileModel");
 
             try
-            {
-                // Check if the file exists in the S3 bucket
-                bool fileExists = await DoesFileExistAsync(s3File);
+            { 
+                bool fileExists = await CheckIfFileExistsAsync(s3File);
                 if (!fileExists)
                 {
                     throw new InvalidOperationException($"File '{s3File.KeyName}' does not exist in the bucket '{s3File.BucketName}' Else the bucket does not exist.");
@@ -155,8 +150,7 @@ namespace FileService.AWS
 
             try
             {
-                // Check if the file exists in the S3 bucket
-                bool fileExists = await DoesFileExistAsync(s3File);
+                bool fileExists = await CheckIfFileExistsAsync(s3File);
                 if (!fileExists)
                 {
                     throw new InvalidOperationException($"File '{s3File.KeyName}' does not exist in the bucket '{s3File.BucketName}' or the bucket does not exist.");
@@ -184,7 +178,6 @@ namespace FileService.AWS
             if (request.BucketOrContainer == null)
                 throw new ArgumentNullException(nameof(request.BucketOrContainer));
 
-
             if (request.PageNumber <= 0 || request.PageSize <= 0)
                 throw new ArgumentException("Page number and page size must be greater than zero");
 
@@ -198,7 +191,6 @@ namespace FileService.AWS
 
                 do
                 {
-
                     var listObjectsRequest = new ListObjectsV2Request
                     {
                         BucketName = request.BucketOrContainer,
@@ -210,19 +202,15 @@ namespace FileService.AWS
 
                     foreach (var obj in response.S3Objects)
                     {
-
                         if (itemsProcessed >= itemsToSkip)
                         {
                             keys.Add(obj.Key);
-
                             if (keys.Count >= request.PageSize)
                                 break;
                         }
-
                         itemsProcessed++;
                     }
                     continuationToken = response.NextContinuationToken;
-
                 } while (!string.IsNullOrEmpty(continuationToken) && keys.Count < request.PageSize);
 
                 return keys;
@@ -236,6 +224,5 @@ namespace FileService.AWS
                 throw new Exception("An error occurred while retrieving keys from the S3 bucket.", ex);
             }
         }
-
     }
 }

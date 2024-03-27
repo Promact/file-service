@@ -16,11 +16,11 @@ namespace FileService
         Task UploadFileAsync(FileModelBase file);
 
         /// <summary>
-        /// Retrieves the content of a file as a string asynchronously.
+        /// Retrieves the content of a file as a byte array asynchronously.
         /// </summary>
         /// <param name="file">The file model representing the file to retrieve.</param>
-        /// <returns>A task representing the asynchronous operation. The task result contains the content of the file as a string.</returns>
-        Task<string> GetFileAsStringAsync(FileModelBase file);
+        /// <returns>A task representing the asynchronous operation. The task result contains the content of the file as a byte array.</returns>
+        Task<byte[]> GetFileAsBytesAsync(FileModelBase file);
 
         /// <summary>
         /// Deletes a file asynchronously.
@@ -30,7 +30,7 @@ namespace FileService
         Task DeleteFileAsync(FileModelBase file);
 
         /// <summary>
-        /// Generates a pre-signed URL for downloading the specified file with the provided expiration time.
+        /// Generates a pre-signed URL for  the specified file with the provided expiration time.
         /// </summary>
         /// <param name="file">The file model representing the file for which to generate the pre-signed URL.</param>
         /// <param name="expiration">The expiration time for the pre-signed URL.</param>
