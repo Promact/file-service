@@ -32,8 +32,8 @@ namespace FileService.Test.Controllers
             //    FilePath = "path/to/file.txt"
             //};
 
-            //// Call the FileService method to Get  the  content of file
-            //_fileService.GetFileAsStringAsync(fileModel).GetAwaiter().GetResult();
+            //// Call the FileService method to Get  the  content of file in bytes
+            //_fileService.GetFileAsBytesAsync(fileModel).GetAwaiter().GetResult();
 
             //// Call the FileService method to upload the file
             //_fileService.UploadFileAsync(fileModel).GetAwaiter().GetResult();
