@@ -12,15 +12,12 @@ namespace FileService.Test
 
             var Configuration = builder.Configuration;
 
-            // Retrieve the value of "File Service Type" from configuration
             string emailServiceType = Configuration["FileServiceType"];
-            // Add services to the container.
+
             builder.Services.AddControllersWithViews();
 
-            // Use the value of emailServiceType to configure services accordingly
             if (emailServiceType == "Azure")
             {
-                // Register BlobServiceClient
                 builder.Services.AddAzureFileService(options =>
                 {
                     options.ConnectionString = Configuration.GetSection("Azure:ConnectionString").Value;

@@ -16,7 +16,6 @@ namespace FileService.Azure
             {
                 var azureOptions = new AzureOptions();
                 options?.Invoke(azureOptions);
-
                 var connectionString = azureOptions.ConnectionString;
                 var blobServiceClient = new BlobServiceClient(connectionString);
 

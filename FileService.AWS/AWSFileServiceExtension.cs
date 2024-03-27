@@ -1,4 +1,5 @@
 ﻿using Amazon.S3;
+using Amazon.S3.Transfer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
@@ -25,6 +26,15 @@ namespace FileService.AWS
                 var s3Client = new AmazonS3Client(awsOptions.AccessKey, awsOptions.SecretKey);
 
                 return s3Client;
+            });
+
+            serviceCollection.AddSingleton<TransferUtility>(sp =>
+            {
+                var awsOptions = sp.GetRequiredService<IOptions<AWSOptions>>().Value;
+
+                var s3Client = sp.GetRequiredService<IAmazonS3>();
+
+                return new TransferUtility(s3Client);
             });
 
             return serviceCollection;

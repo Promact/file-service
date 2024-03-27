@@ -20,9 +20,9 @@ namespace FileService.Test.Controllers
 
             //var fileModel = new S3FileModel
             //{
-            //    BucketName = "publicaws8",
-            //    KeyName = "Private.txt",
-            //    FilePath = "C:/Users/admin/Documents/Private.txt"
+            //    BucketName = "my_Bucket",
+            //    KeyName = "FileName",
+            //    FilePath = "path/to/file.txt"
             //};
 
             //var fileModel = new AzureBlobFileModel

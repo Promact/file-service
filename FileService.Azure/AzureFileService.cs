@@ -16,7 +16,6 @@ namespace FileService.Azure
 {
     public class AzureFileService : IFileService
     {
-
         private readonly BlobServiceClient _blobServiceClient;
 
         public AzureFileService(BlobServiceClient blobServiceClient)
@@ -24,7 +23,13 @@ namespace FileService.Azure
             _blobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
         }
 
-        public async Task<bool> DoesBlobExistAsync(string containerName, string blobName)
+        /// <summary>
+        /// Checks if a blob exists in the specified Azure Blob Storage container asynchronously.
+        /// </summary>
+        /// <param name="containerName">The name of the container where the blob resides.</param>
+        /// <param name="blobName">The name of the blob to check for existence.</param>
+        /// <returns>A task representing the asynchronous operation. The task result indicates whether the blob exists (true) or not (false).</returns>
+        public async Task<bool> CheckIfBlobExistAsync(string containerName, string blobName)
         {
             try
             {
@@ -57,7 +62,7 @@ namespace FileService.Azure
             }
         }
 
-        public async Task<string> GetFileAsStringAsync(FileModelBase file)
+        public async Task<byte[]> GetFileAsBytesAsync(FileModelBase file)
         {
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
@@ -70,11 +75,10 @@ namespace FileService.Azure
                 var blobClient = _blobServiceClient.GetBlobContainerClient(azureBlobFile.ContainerName).GetBlobClient(azureBlobFile.KeyName);
                 var response = await blobClient.DownloadAsync();
 
-                using (var reader = new StreamReader(response.Value.Content))
+                using (var memoryStream = new MemoryStream())
                 {
-                    string fileContent = await reader.ReadToEndAsync();
-
-                    return fileContent;
+                    await response.Value.Content.CopyToAsync(memoryStream);
+                    return memoryStream.ToArray();
                 }
             }
             catch (RequestFailedException ex)
@@ -93,8 +97,7 @@ namespace FileService.Azure
 
             try
             {
-                // Check if the container and file exist
-                bool blobExists = await DoesBlobExistAsync(azureBlobFile.ContainerName, azureBlobFile.KeyName);
+                bool blobExists = await CheckIfBlobExistAsync(azureBlobFile.ContainerName, azureBlobFile.KeyName);
                 if (!blobExists)
                 {
                     throw new InvalidOperationException($" The specified blob does not exist Else Blob '{azureBlobFile.KeyName}' does not exist in container '{azureBlobFile.ContainerName}'");
@@ -119,8 +122,7 @@ namespace FileService.Azure
 
             try
             {
-                // Check if the container and file exist
-                bool blobExists = await DoesBlobExistAsync(azureBlobFile.ContainerName, azureBlobFile.KeyName);
+                bool blobExists = await CheckIfBlobExistAsync(azureBlobFile.ContainerName, azureBlobFile.KeyName);
                 if (!blobExists)
                 {
                     throw new InvalidOperationException($"The specified blob does not exist Else Blob '{azureBlobFile.KeyName}' does not exist in container '{azureBlobFile.ContainerName}'");
@@ -129,20 +131,17 @@ namespace FileService.Azure
                 var blobContainerClient = _blobServiceClient.GetBlobContainerClient(azureBlobFile.ContainerName);
                 var blobClient = blobContainerClient.GetBlobClient(azureBlobFile.KeyName);
 
-                // Generate the signed URL with the specified expiration time
                 var sasBuilder = new BlobSasBuilder
                 {
                     BlobContainerName = azureBlobFile.ContainerName,
                     BlobName = azureBlobFile.KeyName,
                     Resource = "b",
                     StartsOn = DateTimeOffset.UtcNow,
-                    ExpiresOn = DateTimeOffset.UtcNow.Add(expiration), // Use TimeSpan here
+                    ExpiresOn = DateTimeOffset.UtcNow.Add(expiration), 
                 };
 
-                // Set other permissions as needed (e.g., Read, Write, Delete)
                 sasBuilder.SetPermissions(BlobSasPermissions.Read);
 
-                // Get the SAS token
                 var sasToken = blobClient.GenerateSasUri(sasBuilder);
 
                 return sasToken.ToString();
@@ -185,7 +184,6 @@ namespace FileService.Azure
 
                         keys.Add(blobItem.Name);
 
-
                         if (keys.Count >= request.PageSize)
                             break;
                     }
@@ -201,7 +199,5 @@ namespace FileService.Azure
                 throw new Exception("An error occurred while retrieving keys from Azure Blob Storage.", ex);
             }
         }
-
-
     }
 }
