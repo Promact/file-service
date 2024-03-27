@@ -10,26 +10,24 @@ namespace FileService.Test
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var Configuration = builder.Configuration;
-
-            string emailServiceType = Configuration["FileServiceType"];
+            string fileServiceType = builder.Configuration["FileServiceType"];
 
             builder.Services.AddControllersWithViews();
 
-            if (emailServiceType == "Azure")
+            if (fileServiceType == "Azure")
             {
                 builder.Services.AddAzureFileService(options =>
                 {
-                    options.ConnectionString = Configuration.GetSection("Azure:ConnectionString").Value;
+                    options.ConnectionString = builder.Configuration.GetSection("Azure:ConnectionString").Value;
                 });
             }
-            else if (emailServiceType == "AWS")
+            else if (fileServiceType == "AWS")
             {
                 builder.Services.AddAWSFileService(options =>
                 {
-                    options.AccessKey = Configuration.GetSection("AWS:AccessKeyId").Value;
-                    options.SecretKey = Configuration.GetSection("AWS:SecretAccessKey").Value;
-                    options.Region = Configuration.GetSection("AWS:Region").Value;
+                    options.AccessKey = builder.Configuration.GetSection("AWS:AccessKeyId").Value;
+                    options.SecretKey = builder.Configuration.GetSection("AWS:SecretAccessKey").Value;
+                    options.Region = builder.Configuration.GetSection("AWS:Region").Value;
                 });
             }
             else
